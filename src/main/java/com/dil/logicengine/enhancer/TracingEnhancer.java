@@ -22,12 +22,12 @@ public class TracingEnhancer<I, O> extends BaseAction<I, O> {
         Span span = tracer.spanBuilder(spanName).startSpan();
         try (Scope scope = span.makeCurrent()) {
             var ctx = span.getSpanContext();
-            MDC.put("trace_id", ctx.getTraceId());
-            MDC.put("span_id", ctx.getSpanId());
+            MDC.put("traceid", ctx.getTraceId());
+            MDC.put("spanid", ctx.getSpanId());
             MDC.put("action", spanName);
-            log.info("[LOG] Entering Enhancer: " + this.getClass().getSimpleName());
+            log.info("Entering Enhancer: " + this.getClass().getSimpleName());
             O result = delegate.execute(request);
-            log.info("[LOG] Exiting Enhancer: " + this.getClass().getSimpleName());
+            log.info("Exiting Enhancer: " + this.getClass().getSimpleName());
             return result;
         } finally {
             MDC.clear();

@@ -11,13 +11,13 @@ public class LoggingEnhancer<I, O> extends BaseAction<I, O> {
 
     @Override
     public O execute(I input) {
-        log.info("[LOG] Entering Enhancer: " + this.getClass().getSimpleName());
+        log.info("Entering Enhancer: " + this.getClass().getSimpleName());
         try {
             O result = delegate.execute(input);
-            log.info("[LOG] Exiting Enhancer: " + this.getClass().getSimpleName());
+            log.info("Exiting Enhancer: " + this.getClass().getSimpleName());
             return result;
         } catch (Exception e) {
-            log.info("[LOG] Exception in Enhancer: " + this.getClass().getSimpleName() + " → " + e.getMessage());
+            log.info("Exception in Enhancer: " + this.getClass().getSimpleName() + " → " + e.getMessage());
             throw e;
         }
     }
