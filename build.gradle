@@ -21,8 +21,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'io.opentelemetry:opentelemetry-api:1.36.0'
-	implementation 'io.opentelemetry:opentelemetry-sdk:1.36.0'
+	implementation 'io.opentelemetry:opentelemetry-api:1.50.0'
+	implementation 'io.opentelemetry:opentelemetry-sdk:1.50.0'
 	implementation 'io.opentelemetry:opentelemetry-exporter-logging:1.36.0'
 	implementation 'org.springframework.kafka:spring-kafka'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
@@ -34,8 +34,29 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'com.github.loki4j:loki-logback-appender:1.6.0'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.opentelemetry:opentelemetry-exporter-otlp:1.51.0'
+	implementation 'io.opentelemetry:opentelemetry-semconv:1.9.0-alpha'
+	implementation 'io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.51.0'
+
+
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+def otelAgentJar = file("$projectDir/src/main/resources/opentelemetry-javaagent.jar")
+tasks.named('bootRun', org.springframework.boot.gradle.tasks.run.BootRun) {
+	// add the –javaagent arg plus any OTel system properties you want
+	jvmArgs = [
+			"-javaagent:${otelAgentJar}",
+			"-Dotel.service.name=logicengine",
+			"-Dotel.traces.exporter=otlp",
+			"-Dotel.exporter.otlp.endpoint=http://localhost:4318",
+			"-Dotel.resource.attributes=env=dev",
+			"-Dotel.metrics.exporter=none",
+			"-Dotel.logs.exporter=none"
+	]
 }

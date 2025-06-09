@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -14,3 +13,51 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - "3100:3100"
+    # explicitly run our startup script via sh
+    entrypoint: [ "sh", "/etc/loki/start-loki.sh" ]
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - ./start-loki.sh:/etc/loki/start-loki.sh
+
+
+  tempo:
+    image: grafana/tempo:latest
+    ports:
+      - "3200:3200"       # Tempo HTTP endpoint
+      - "4317:4317"       # OTLP gRPC for traces
+      - "4318:4318"       # OTLP HTTP for traces
+    entrypoint: ["/tempo", "-config.file=/etc/tempo/tempo.yaml"]
+    stdin_open: true     # keeps STDIN open (like -i)
+    tty: true            # allocates a pseudo-TTY (like -t)
+    volumes:
+      - ./tempo.yaml:/etc/tempo/tempo.yaml
+
+volumes:
+  grafana-storage:

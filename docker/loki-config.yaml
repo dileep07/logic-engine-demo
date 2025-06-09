@@ -1,0 +1,63 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+# ─────── INGESTER/LIFECYCLER + WAL ────────────────────────────────────────────────
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  chunk_idle_period: 5m
+  max_chunk_age: 1h
+
+  # ← override default WAL path so it doesn’t try “/wal”
+  wal:
+    dir: /tmp/loki/wal
+    enabled: true
+    # replay: true     # (optional) replay on startup
+
+# ─────── STORAGE CONFIGURATION ─────────────────────────────────────────────────
+storage_config:
+  boltdb_shipper:
+    # Where to store index files
+    active_index_directory: /tmp/loki/index
+    cache_location: /tmp/loki/cache
+    shared_store: filesystem
+
+  filesystem:
+    # Where chunk files go
+    directory: /tmp/loki/chunks
+
+# ─────── COMPACTOR ──────────────────────────────────────────────────────────────
+compactor:
+  working_directory: /tmp/loki/compactor
+  shared_store: filesystem
+
+# ─────── TABLE MANAGER (RETENTION) ──────────────────────────────────────────────
+table_manager:
+  retention_deletes_enabled: false
+  retention_period: 0s
+
+# ─────── SCHEMA CONFIG ──────────────────────────────────────────────────────────
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v12
+      index:
+        prefix: index_
+        period: 24h
+
+# ─────── CHUNK STORE CONFIG ────────────────────────────────────────────────────
+chunk_store_config:
+  max_look_back_period: 0s
+
+# ─────── LIMITS CONFIG ─────────────────────────────────────────────────────────
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h

@@ -5,6 +5,7 @@ import com.dil.logicengine.annotations.LogicEngineListener;
 import com.dil.logicengine.config.OtelConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
@@ -55,9 +56,13 @@ public class LogicEngineKafkaListenerRegistrar {
 
                 props.setMessageListener((MessageListener<String, String>) record -> {
                     Span span = tracer.spanBuilder("KafkaListener:" + method.getName())
-                            .setAttribute("kafka.topic", record.topic())
-                            .setAttribute("kafka.partition", record.partition())
-                            .setAttribute("kafka.offset", record.offset())
+                            .setSpanKind(SpanKind.CONSUMER)
+                            .setAttribute("messaging.system", "kafka")
+                            .setAttribute("messaging.destination", record.topic())
+                            .setAttribute("messaging.destination_kind", "topic")
+                            .setAttribute("messaging.operation", "receive")
+                            .setAttribute("messaging.kafka.partition", record.partition())
+                            .setAttribute("messaging.kafka.offset", record.offset())
                             .startSpan();
 
                     try (Scope scope = span.makeCurrent()) {
@@ -90,31 +95,15 @@ public class LogicEngineKafkaListenerRegistrar {
                 ConsumerFactory<String, String> consumerFactory = (ConsumerFactory<String, String>) factory.getConsumerFactory();
                 ConcurrentMessageListenerContainer<String, String> container =
                         new ConcurrentMessageListenerContainer<>(consumerFactory, props);
-                Span span = tracer.spanBuilder("KafkaContainerStartup")
-                        .setAttribute("topic", ann.topic())
-                        .setAttribute("groupId", ann.groupId())
-                        .startSpan();
 
-                try (Scope scope = span.makeCurrent()) {
-                    MDC.put("traceId", span.getSpanContext().getTraceId());
-                    MDC.put("spanId", span.getSpanContext().getSpanId());
-                    MDC.put("action", "KafkaContainerStartup");
-
+                try {
                     log.info("Starting Kafka container for topic={} groupId={} method={}",
                             ann.topic(), ann.groupId(), method.getName());
-
                     container.start();
-
                     log.info("Kafka container started for topic={} groupId={}",
                             ann.topic(), ann.groupId());
-
                 } catch (Exception e) {
-                    span.recordException(e);
-                    span.setStatus(StatusCode.ERROR);
                     log.error("Failed to start Kafka container for topic={}: {}", ann.topic(), e.getMessage(), e);
-                } finally {
-                    span.end();
-                    MDC.clear();
                 }
             }
         }

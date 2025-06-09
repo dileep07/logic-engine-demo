@@ -15,7 +15,7 @@ public class GreeterEventListener {
 
     @LogicEngineListener(
             topic = "greeting.events",
-            groupId = "greeting-service",
+            groupId = "greeting-service-json",
             payloadType = Greeting.class,
             deserialization = DeserialisationType.JSON
     )
@@ -25,7 +25,7 @@ public class GreeterEventListener {
 
     @LogicEngineListener(
             topic = "greeting.strings",
-            groupId = "greeting-service",
+            groupId = "greeting-service-string",
             payloadType = Greeting.class,
             deserialization = DeserialisationType.STRING
     )

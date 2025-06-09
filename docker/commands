@@ -1,0 +1,9 @@
+
+
+Loki start
+
+docker run -d --name loki \
+  -p 3100:3100 \
+  -v "$(pwd)/loki-config.yaml:/etc/loki/local-config.yaml" \
+  grafana/loki:2.9.2 \
+  -config.file=/etc/loki/local-config.yaml

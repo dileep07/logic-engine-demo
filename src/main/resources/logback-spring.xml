@@ -1,0 +1,43 @@
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [action=%mdc{action}] [traceid=%mdc{traceid} spanid=%mdc{spanid}] %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+    <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <format>
+            <label>
+                <!-- Logback pattern for labels -->
+                <pattern>
+                    app = ${appName},
+                    host = ${HOSTNAME},
+                    traceid = %mdc{traceid}
+                </pattern>
+                <!-- Logback pattern for structured metadata -->
+            </label>
+            <message>
+                <pattern>
+                    %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [action=%mdc{action}] [traceid=%mdc{traceid} spanid=%mdc{spanid}] %msg%n
+                </pattern>
+            </message>
+        </format>
+        <http>
+            <url>http://localhost:3100/loki/api/v1/push</url>
+            <connectTimeoutMs>2000</connectTimeoutMs>
+            <readTimeoutMs>2000</readTimeoutMs>
+            <batchMaxItems>1000</batchMaxItems>
+            <batchMaxBytes>1048576</batchMaxBytes>
+            <failOnError>false</failOnError>
+        </http>
+        <pipeline class="com.github.loki4j.client.pipeline.AsyncBufferPipeline" />
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+    <root level="INFO">
+        <appender-ref ref="LOKI"/>
+    </root>
+</configuration>

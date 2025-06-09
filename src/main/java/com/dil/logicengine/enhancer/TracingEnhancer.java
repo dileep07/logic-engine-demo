@@ -3,6 +3,7 @@ package com.dil.logicengine.enhancer;
 import com.dil.logicengine.api.BaseAction;
 import com.dil.logicengine.api.LogicAction;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +19,39 @@ public class TracingEnhancer<I, O> extends BaseAction<I, O> {
     @Override
     public O execute(I request) {
         LogicAction<I, O> actualAction = unwrapToInnermost(delegate);
-        String spanName = actualAction.getClass().getSimpleName();
-        Span span = tracer.spanBuilder(spanName).startSpan();
+        String actualActionName = actualAction.getClass().getSimpleName();
+
+        // Create a span that clearly identifies this as an enhancer operation
+        String spanName = "TracingEnhancer." + actualActionName;
+        Span span = tracer.spanBuilder(spanName)
+                .setAttribute("action.class", actualActionName)
+                .setAttribute("action.type", "logic_action")
+                .setAttribute("enhancer.type", "tracing")
+                .startSpan();
+
         try (Scope scope = span.makeCurrent()) {
             var ctx = span.getSpanContext();
             MDC.put("traceid", ctx.getTraceId());
             MDC.put("spanid", ctx.getSpanId());
-            MDC.put("action", spanName);
+            MDC.put("action", actualActionName);
+
             log.info("Entering Enhancer: " + this.getClass().getSimpleName());
+
             O result = delegate.execute(request);
+
+            // Mark span as successful
+            span.setStatus(StatusCode.OK);
+            span.setAttribute("action.result", "success");
+
             log.info("Exiting Enhancer: " + this.getClass().getSimpleName());
             return result;
+
+        } catch (Exception e) {
+            // Record the exception in the span
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.setAttribute("action.result", "error");
+            throw e;
         } finally {
             MDC.clear();
             span.end();
@@ -66,5 +89,4 @@ public class TracingEnhancer<I, O> extends BaseAction<I, O> {
         }
         return null;
     }
-
 }
