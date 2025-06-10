@@ -21,8 +21,8 @@ public class KafkaTestController {
     }
 
     @PostMapping("/send-string")
-    public ResponseEntity<String> sendTestString(@RequestBody String json) {
-        rawkafkaTemplate.send("greeting.strings", json);
+    public ResponseEntity<String> sendTestString(@RequestBody String name) {
+        rawkafkaTemplate.send("greeting.strings", name);
         return ResponseEntity.ok("Message sent String");
     }
 

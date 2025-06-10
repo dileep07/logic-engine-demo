@@ -3,17 +3,24 @@ apiVersion: 1
 datasources:
   - name: Prometheus
     type: prometheus
+    uid: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
+    jsonData:
+      # Enable Node Graph for Prometheus
+      nodeGraph:
+        enabled: true
 
   - name: Loki
     type: loki
+    uid: loki
     access: proxy
     url: http://loki:3100
 
   - name: Tempo
     type: tempo
+    uid: tempo
     access: proxy
     url: http://tempo:3200
     jsonData:
@@ -24,4 +31,9 @@ datasources:
         filterByTraceID: true
         filterBySpanID: false
         customQuery: true
-        query: '{traceID="$${__trace.traceId}"}'
+        query: '{traceid="$${__trace.traceId}"}'
+      serviceMap:
+        datasourceUid: 'prometheus'    # your Prometheus DS UID
+      # Node Graph
+      nodeGraph:
+        enabled: true

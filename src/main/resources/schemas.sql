@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS greeting (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    message VARCHAR(255),
+    input_text VARCHAR(255)
+);

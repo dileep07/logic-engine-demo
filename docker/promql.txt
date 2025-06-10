@@ -1,0 +1,32 @@
+  label_replace(
+    label_replace(
+      sum by (action) (
+        label_replace(
+          sum_over_time(logic_engine_call_edge_total[5m]),
+          "action", "$1", "source_action", "(.*)"
+        )
+        or
+        label_replace(
+          sum_over_time(logic_engine_call_edge_total[5m]),
+          "action", "$1", "target_action", "(.*)"
+        )
+      ),
+      "title", "$1", "action", "(.*)"
+    ),
+    "id", "$1", "action", "(.*)"
+  )
+
+
+
+  label_replace(
+    label_replace(
+      label_join(
+        sum by (source_action, target_action) (
+          increase(logic_engine_call_edge_total[5m])
+        ),
+        "id", "", "source_action", "target_action"
+      ),
+      "source", "$1", "source_action", "(.*)"
+    ),
+    "target", "$1", "target_action", "(.*)"
+  )
